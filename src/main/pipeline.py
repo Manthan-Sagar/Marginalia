@@ -3,7 +3,8 @@ import sys
 import pandas as pd
 
 # Add src to path for imports
-sys.path.append(os.path.dirname(__file__))
+# Add src to path for imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from recommender import vectorizer, similarity
 from llm import gemini_intent
@@ -13,7 +14,7 @@ def main():
     
     # 1. Load Data
     # Pointing to the FULL dataset now
-    data_path = os.path.join(os.path.dirname(__file__), '..', 'processed_book_data_kaggle.csv')
+    data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'processed_book_data_kaggle.csv')
     if not os.path.exists(data_path):
         print(f"Error: Data file not found at {data_path}")
         return
@@ -52,14 +53,42 @@ def main():
         # Format intent for display
         print(f"Themes: {intent.get('themes')}")
         print(f"Tone: {intent.get('tone')}")
+        # Format intent for display
+        print(f"Themes: {intent.get('themes')}")
+        print(f"Tone: {intent.get('tone')}")
         
-        # 4. Convert to Query
+        # 4. Secondary Filter Input
+        print("\n--- Optional Filters ---")
+        
+        filters = {}
+        
+        # Author Filter
+        author_input = input("Filter by Author (name only, leave blank to skip): ").strip()
+        if author_input:
+            filters['author'] = author_input
+            
+        # Page Filter
+        page_input = input("Filter by Page Count (e.g. 100-300, leave blank to skip): ").strip()
+        if page_input:
+            if '-' in page_input and page_input.replace('-', '').isdigit():
+                print("⚠️  Warning: Page count data is not available in the current dataset. Page filter ignored.")
+                # filters['pages'] = page_input
+            else:
+                 print(f"⚠️  Ignoring invalid page format: {page_input}")
+
+        # 5. Convert to Query
         query_str = gemini_intent.intent_to_query_text(intent)
-        # print(f"Search Query: {query_str}") # Debugging
         
-        # 5. Search
+        # 6. Search
         print("\nTop Recommendations:")
-        similarity.search_books(query_str, vec, matrix, df, top_n=5)
+        similarity.search_books(
+            query=query_str,
+            vectorizer=vec,
+            book_vectors=matrix,
+            df=df,
+            top_n=5,
+            filters=filters
+        )
 
 if __name__ == "__main__":
     main()
